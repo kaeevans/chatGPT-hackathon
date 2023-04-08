@@ -11,7 +11,6 @@ app = quart_cors.cors(quart.Quart(__name__),
                       allow_origin="https://chat.openai.com")
 
 _TODOS = {}
-_WEBSITE_CONTENT = ""
 
 
 def fetch_website(url):
