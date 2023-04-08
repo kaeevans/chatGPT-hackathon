@@ -1,0 +1,131 @@
+openapi: 3.0.1
+info:
+  title: Website Scraping Plugin
+  description: A plugin that allows the user to fetch the content at a url using ChatGPT. If you do not know the user's username, ask them first before making queries to the plugin. Otherwise, use the username "global".
+  version: 'v1'
+paths:
+  # /todos/{username}:
+  #   get:
+  #     operationId: getTodos
+  #     summary: Get the list of todos
+  #     parameters:
+  #     - in: path
+  #       name: username
+  #       schema:
+  #           type: string
+  #       required: true
+  #       description: The name of the user.
+  #     responses:
+  #       "200":
+  #         description: OK
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/getTodosResponse'
+  #   post:
+  #     operationId: addTodo
+  #     summary: Add a todo to the list
+  #     parameters:
+  #     - in: path
+  #       name: username
+  #       schema:
+  #           type: string
+  #       required: true
+  #       description: The name of the user.
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/addTodoRequest'
+  #     responses:
+  #       "200":
+  #         description: OK
+  #   delete:
+  #     operationId: deleteTodo
+  #     summary: Delete a todo from the list
+  #     parameters:
+  #     - in: path
+  #       name: username
+  #       schema:
+  #           type: string
+  #       required: true
+  #       description: The name of the user.
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/deleteTodoRequest'
+  #     responses:
+  #       "200":
+  #         description: OK
+  /website/{username}:
+    post:
+      operationId: getWebsite
+      summary: Fetch the website content at a url
+      parameters:
+      - in: path
+        name: username
+        schema:
+            type: string
+        required: true
+        description: The name of the user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/getWebsiteRequest'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getWebsiteResponse'
+
+components:
+  schemas:
+    # getTodosResponse:
+    #   type: object
+    #   properties:
+    #     todos:
+    #       type: array
+    #       items:
+    #         type: string
+    #       description: The list of todos.
+    # addTodoRequest:
+    #   type: object
+    #   required:
+    #   - todo
+    #   properties:
+    #     todo:
+    #       type: string
+    #       description: The todo to add to the list.
+    #       required: true
+    # deleteTodoRequest:
+    #   type: object
+    #   required:
+    #   - todo_idx
+    #   properties:
+    #     todo_idx:
+    #       type: integer
+    #       description: The index of the todo to delete.
+    #       required: true
+    getWebsiteResponse:
+      type: object
+      properties:
+        summarized_html:
+          type: string
+          description: The summarized website content at a url
+          required: true
+    getWebsiteRequest:
+       type: object
+       required:
+       - url
+       properties:
+         url:
+           type: string
+           description: The url of the website to fetch
+           required: true
