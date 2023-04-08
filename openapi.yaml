@@ -120,6 +120,17 @@ components:
           type: string
           description: The summarized website content at a url
           required: true
+        actions:
+          type: array
+          items:
+            type: object
+            properties:
+              url: 
+                type: string
+                description: the url of the available action
+              action_description:
+                type: string
+                description: The action available at that URL
     getWebsiteRequest:
        type: object
        required:

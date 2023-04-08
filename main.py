@@ -1,3 +1,4 @@
+import os
 import json
 
 import quart
@@ -5,12 +6,77 @@ import quart_cors
 from quart import request
 import requests
 from bs4 import BeautifulSoup
+import openai
+
+OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
+
+openai.api_key = OPENAI_API_KEY
+#openai.organization = OPENAI_ORG_ID
 
 # Note: Setting CORS to allow chat.openapi.com is required for ChatGPT to access your plugin
 app = quart_cors.cors(quart.Quart(__name__),
                       allow_origin="https://chat.openai.com")
 
-_TODOS = {}
+#_TODOS = {}
+
+
+def try_selenium(url, keyboard_form_values, click_actions):
+  import selenium
+  from selenium import webdriver
+  from selenium.webdriver.common.by import By
+  from selenium.webdriver.chrome.options import Options
+  chrome_options = Options()
+  chrome_options.add_argument('--no-sandbox')
+  chrome_options.add_argument('--disable-dev-shm-usage')
+  #chrome_options.headless = True
+
+  driver = webdriver.Chrome(options=chrome_options)
+
+  driver.get(url)
+  driver.implicitly_wait(0.5)
+
+  for (form_name, form_value) in keyboard_form_values:
+    try:
+      element = driver.find_element(by=By.PARTIAL_LINK_TEXT, value=form_name)
+      if element:
+        element.send_keys(form_value)
+    except selenium.common.exceptions.NoSuchElementException:
+      pass
+
+  for action in click_actions:
+    element = driver.find_element(by=By.PARTIAL_LINK_TEXT, value=action)
+    if element:
+      element.click()
+
+  # return the new HTML of the page
+  source = driver.page_source
+  driver.quit()
+  return source
+
+
+try_selenium("https://google.com", [("search", "this is my google search")], "search")
+
+
+def ask_chatgpt(system_prompt, user_prompt):
+  raw_verdict = openai.ChatCompletion.create(  # type: ignore
+    model="gpt-3.5-turbo",
+    messages=[
+      {
+        "role": "system",
+        "content": system_prompt,
+      },
+      {
+        "role": "user",
+        "content": user_prompt,
+      },
+    ],
+    temperature=0.2,
+  )
+  verdict_result = raw_verdict["choices"][0]["message"]["content"]
+  return verdict_result
+
+
+#print(ask_chatgpt('do math', 'what is 1+1'))
 
 
 def fetch_website(url):
@@ -35,20 +101,28 @@ def fetch_website(url):
 #website_content = fetch_website(url)
 #print(website_content)
 
+#@app.post("/todos/<string:username>")
+#async def add_todo(username):
+#  request = await quart.request.get_json(force=True)
+#  if username not in _TODOS:
+#    _TODOS[username] = []
+#  _TODOS[username].append(request["todo"])
+#  return quart.Response(response='OK', status=200)
 
-@app.post("/todos/<string:username>")
-async def add_todo(username):
-  request = await quart.request.get_json(force=True)
-  if username not in _TODOS:
-    _TODOS[username] = []
-  _TODOS[username].append(request["todo"])
-  return quart.Response(response='OK', status=200)
+#@app.get("/todos/<string:username>")
+#async def get_todos(username):
+#  return quart.Response(response=json.dumps(_TODOS.get(username, [])),
+#                        status=200)
 
 
-@app.get("/todos/<string:username>")
-async def get_todos(username):
-  return quart.Response(response=json.dumps(_TODOS.get(username, [])),
-                        status=200)
+def get_actions(soup):
+  anchor_tags = soup.find_all('a')
+  output = []
+  for anchor in anchor_tags:
+    link = anchor.get('href')
+    description = anchor.text.strip()
+    output.append({'url': link, 'action_description': description})
+  return output
 
 
 @app.post("/website/<string:username>")
@@ -64,17 +138,23 @@ async def get_website(username):
   website_text = soup.get_text()
   print(f'website_text is {website_text[:300]}')
 
-  return quart.Response(response=json.dumps({'summarized_html': website_text}),
-                        status=200)
+  available_actions = get_actions(soup)
+
+  return quart.Response(response=json.dumps({
+    'summarized_html': website_text,
+    'actions': available_actions
+  }),
+                        status=200,
+                        content_type='application/json')
 
 
-@app.delete("/todos/<string:username>")
-async def delete_todo(username):
-  request = await quart.request.get_json(force=True)
-  todo_idx = request["todo_idx"]
-  if 0 <= todo_idx < len(_TODOS[username]):
-    _TODOS[username].pop(todo_idx)
-  return quart.Response(response='OK', status=200)
+#@app.delete("/todos/<string:username>")
+#async def delete_todo(username):
+#  request = await quart.request.get_json(force=True)
+#  todo_idx = request["todo_idx"]
+#  if 0 <= todo_idx < len(_TODOS[username]):
+#    _TODOS[username].pop(todo_idx)
+#  return quart.Response(response='OK', status=200)
 
 
 @app.get("/logo.png")
