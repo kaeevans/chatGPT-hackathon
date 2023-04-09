@@ -26,3 +26,14 @@ def remove_useless_tags(bs4_tag):
       for m in matches:
         m.decompose()
   return bs4_tag
+
+
+
+def get_actions(soup):
+  anchor_tags = soup.find_all('a')
+  output = []
+  for anchor in anchor_tags:
+    link = anchor.get('href')
+    description = anchor.text.strip()
+    output.append({'url': link, 'action_description': description})
+  return output
