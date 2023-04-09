@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: Website Scraping Plugin
-  description: A plugin that allows the user to fetch the content at a url using ChatGPT. If you do not know the user's username, ask them first before making queries to the plugin. Otherwise, use the username "global".
+  description: A plugin that allows the user to find hotels that meet search criteria using ChatGPT. If you do not know the user's username, ask them first before making queries to the plugin. Otherwise, use the username "global".
   version: 'v1'
 paths:
   # /todos/{username}:
@@ -84,6 +84,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/getWebsiteResponse'
+  
+  /hotel/{username}:
+    post:
+      operationId: getHotelAvailability
+      summary: Get hotel availability
+      parameters:
+      - in: path
+        name: username
+        schema:
+            type: string
+        required: true
+        description: The name of the user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/getHotelAvailability'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getHotelResponse'
 
 components:
   schemas:
@@ -113,6 +138,15 @@ components:
     #       type: integer
     #       description: The index of the todo to delete.
     #       required: true
+    getWebsiteRequest:
+       type: object
+       required:
+       - url
+       properties:
+         url:
+           type: string
+           description: The url of the website to fetch
+           required: true  
     getWebsiteResponse:
       type: object
       properties:
@@ -131,12 +165,20 @@ components:
               action_description:
                 type: string
                 description: The action available at that URL
-    getWebsiteRequest:
+    getHotelRequest:
        type: object
        required:
        - url
        properties:
          url:
            type: string
-           description: The url of the website to fetch
+           description: The website for the hotel
            required: true
+    getHotelResponse:
+      type: object
+      properties:
+        availability:
+          type: string
+          description: "The hotel's availability"
+          required: true
+           

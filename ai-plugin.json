@@ -1,9 +1,9 @@
 {
   "schema_version": "v1",
-  "name_for_human": "Web Scraping Plugin (no auth)",
-  "name_for_model": "todo",
-  "description_for_human": "Plugin for looking up website content.",
-  "description_for_model": "Plugin for looking up website content.",
+  "name_for_human": "Hotel Availability (no auth)",
+  "name_for_model": "HotelAvailability",
+  "description_for_human": "Plugin for finding hotels.",
+  "description_for_model": "Plugin for finding hotels that meet search criteria.",
   "auth": {
     "type": "none"
   },
