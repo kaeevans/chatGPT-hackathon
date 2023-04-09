@@ -171,8 +171,6 @@ components:
        - name
        - startDate
        - endDate
-       - numRooms
-       - numAdults
        properties:
          name:
            type: string
@@ -188,18 +186,22 @@ components:
            required: true
          numRooms:
            type: string
-           description: The number of rooms to book
-           required: true
+           description: The number of rooms to book. Assume 1 if not specified.
+           required: false
          numAdults:
            type: string
-           description: The number of adults in the booking
-           required: true
+           description: The number of adults in the booking. Assume 2 if not specified.
+           required: false
+         numChildren:
+           type: string
+           description: The number of children in the booking. Assume 0 if not specified.
+           required: false
            
     getHotelResponse:
       type: object
       properties:
         availability:
           type: string
-          description: "The hotel's availability"
+          description: "The javascript code used to make the reservation on the website"
           required: true
            

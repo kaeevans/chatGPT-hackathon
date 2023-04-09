@@ -1,5 +1,7 @@
 # What are the 5 best hotels in Lake Como, Lombardy, Italy that have at least 3 rooms available June 22-25 for under $2,000 per room per night.
 
+# book a room at The George Hotel Montclaire NJ, from June 1 to June 5 this year for 3 adults in 2 rooms
+
 import json
 import quart
 import quart_cors
@@ -48,9 +50,9 @@ def getBookingUrl(hotelUrl):
 # print(getBookingUrl("https://www.belvederebellagio.com/en"))
 
 
-def getBookingForm(form_tags):
-  print("Calling getBookingForm(form_tags)...")
-  # Loop through each <form> tag and extract its contents
+def getMostLikelyFormForBooking(form_tags):
+  print("Calling getMostLikelyFormForBooking(form_tags)...")
+  # Loop through each <form> tag and summarize what it does
   formSummaries = []
   for i, form_tag in enumerate(form_tags, start=1):
     contents = str(remove_useless_tags(form_tag))
@@ -69,50 +71,41 @@ def getBookingForm(form_tags):
   return form_tags[i]
 
 
-def getAndSubmitBookingForm(bookingUrl, bookingRequest):
-  print("bookingUrl: " + bookingUrl)
-  #website_html = fetch_website(bookingUrl)
+def getBookingFormHtml(bookingUrl):
+  # print("bookingUrl: " + bookingUrl)
   website_html = fetch_website_html_with_selenium(bookingUrl)
-  # print(website_html[:1000])
   soup = BeautifulSoup(website_html, 'html.parser')
-
   print("looking for form tags...")
-  # Find all <form> tags
   form_tags = soup.find_all('form')
   print(f'found {len(form_tags)} form tags')
   if len(form_tags) == 0:
-    return
+    print("Could not find booking form")
+    return None
   elif len(form_tags) == 1:
     bookingFormTag = form_tags[0]
   else:
-    bookingFormTag = getBookingForm(form_tags)
-  # print("bookingFormTag: " + str(remove_useless_tags(bookingFormTag))[:200])
+    bookingFormTag = getMostLikelyFormForBooking(form_tags)
+  return bookingFormTag
 
+
+def submitBookingForm(bookingFormHtml, bookingRequest):
+  if not bookingFormHtml:
+    return
   javascriptCode = ask_chatgpt(
     'You are an expert at writing javascript code that performs actions on this html booking form: '
-    + str(bookingFormTag),
+    + str(bookingFormHtml),
     'Write javascript code that will fill out the booking form with the following information and submit it. Only use tags that exist in the HTML booking form: '
     + f'\n startDate: {bookingRequest["startDate"]}' +
     f'\n endDate: {bookingRequest["endDate"]}' +
     f'\n numRooms: {bookingRequest["numRooms"]}' +
     f'\n numAdults: {bookingRequest["numAdults"]}' +
     f'\n numChildren: {bookingRequest["numChildren"]}' +
-    'Format your response as JSON in this format: { "javascriptCode": "console.log("my javascript")" }'
+    'Format your response as JSON in this format: { "javascriptCode": ["console.log("my javascript")"] }'
   )
-  print(javascriptCode)
-  code = json.loads(javascriptCode)["javascriptCode"]
+  # print(javascriptCode)
+  code = parse_json(javascriptCode).get("javascriptCode", None)
+  
   return code
-
-
-bookingUrl = 'https://book.webrez.com/v31/#/property/2445/location/0/search'
-bookingRequest = {
-  "startDate": "06/22/2023",
-  "endDate": "06/25/2023",
-  "numRooms": '3',
-  "numAdults": '6',
-  "numChildren": '0'
-}
-#print(getAndSubmitBookingForm(bookingUrl, bookingRequest))
 
 
 def everythingAllTogether(hotelName, bookingRequest):
@@ -121,12 +114,24 @@ def everythingAllTogether(hotelName, bookingRequest):
   print(f'hotelUrl: {hotelUrl}')
   bookingUrl = getBookingUrl(hotelUrl)
   print(f'bookingUrl: {bookingUrl}')
-  code = getAndSubmitBookingForm(bookingUrl, bookingRequest)
-  print(f'code: {code}')
+  bookingFormHtml = getBookingFormHtml(bookingUrl)
+  print(f'bookingFormHtml: {str(bookingFormHtml)[:100]}')
+  code = submitBookingForm(bookingFormHtml, bookingRequest)
+  print(f'code: {code[:200]}')
+  return code
 
 
+# bookingUrl = 'https://book.webrez.com/v31/#/property/2445/location/0/search'
+# chatGPTprompt = {'name': 'The George Hotel Montclair NJ', 'startDate': '06/01/2023', 'endDate': '06/05/2023', 'numRooms': '2', 'numAdults': '3', 'numChildren': '0'}
 hotelName = "The George Hotel Montclair"
-# everythingAllTogether(hotelName, bookingRequest)
+bookingRequest = {
+  "startDate": "06/22/2023",
+  "endDate": "06/25/2023",
+  "numRooms": '3',
+  "numAdults": '6',
+  "numChildren": '0'
+}
+everythingAllTogether(hotelName, bookingRequest)
 
 
 @app.post("/website/<string:username>")
@@ -162,11 +167,12 @@ async def get_hotel_availability(username):
   endDate = request['endDate']
   numAdults = request['numAdults']
   numRooms = request['numRooms']
+  numChildren = request['numChildren']
 
-  print(f'got request: {request}')
-
+  print(f'got request from ChatGPT: {request}')
   code = everythingAllTogether(name, request)
-  #bookingUrl = getBookingUrl(url)
+
+  print(f'returning this to ChatGPT: {code}')
 
   return quart.Response(response=json.dumps({
     'availability': code,
@@ -194,7 +200,6 @@ async def plugin_manifest():
 @app.get("/openapi.yaml")
 async def openapi_spec():
   host = request.headers['Host']
-  print("hiiii")
   with open("openapi.yaml") as f:
     text = f.read()
     # This is a trick we do to populate the PLUGIN_HOSTNAME constant in the OpenAPI spec
