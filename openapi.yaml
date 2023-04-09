@@ -101,7 +101,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/getHotelAvailability'
+              $ref: '#/components/schemas/getHotelRequest'
       responses:
         "200":
           description: OK
@@ -168,12 +168,33 @@ components:
     getHotelRequest:
        type: object
        required:
-       - url
+       - name
+       - startDate
+       - endDate
+       - numRooms
+       - numAdults
        properties:
-         url:
+         name:
            type: string
-           description: The website for the hotel
+           description: The name of the hotel
            required: true
+         startDate:
+           type: string
+           description: The starting date of the reservation in the format MM/DD/YYYY
+           required: true
+         endDate:
+           type: string
+           description: The ending date of the reservation in the format MM/DD/YYYY
+           required: true
+         numRooms:
+           type: string
+           description: The number of rooms to book
+           required: true
+         numAdults:
+           type: string
+           description: The number of adults in the booking
+           required: true
+           
     getHotelResponse:
       type: object
       properties:
